@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f6f7f4" />
+    <meta name="description" content="A private, local-first resume analysis workspace." />
+    <title>Resume Studio — Local Resume Analyzer</title>
+    <link rel="stylesheet" href="/styles.css?v=8" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="side-panel">
+        <div class="brand">
+          <div class="brand-mark">RA</div>
+          <div>
+            <h1>Resume Studio</h1>
+            <p>Private resume intelligence</p>
+          </div>
+        </div>
+
+        <form id="analyze-form" class="upload-form">
+          <label class="field">
+            <span>Resume PDF</span>
+            <input id="resume-pdf" name="resume_pdf" type="file" accept="application/pdf" />
+          </label>
+
+          <label class="field">
+            <span>Target role</span>
+            <input name="target_role" type="text" placeholder="AI Engineer, Data Analyst, Frontend Developer" />
+          </label>
+
+          <label class="field">
+            <span>Job description</span>
+            <textarea name="job_description" rows="8" placeholder="Paste the job post to calculate keyword match"></textarea>
+          </label>
+
+          <label class="field">
+            <span>Fallback resume text</span>
+            <textarea name="resume_text" rows="7" placeholder="Paste text here if the PDF is scanned"></textarea>
+          </label>
+
+          <button id="analyze-button" class="primary-button" type="submit">
+            <span class="button-icon">↗</span>
+            Analyze locally
+          </button>
+        </form>
+
+        <div class="model-status hidden" id="model-status" aria-hidden="true"></div>
+      </aside>
+
+      <section class="dashboard">
+        <div class="topbar">
+          <div>
+            <p class="eyebrow">RESUME INTELLIGENCE · ATS WORKSPACE</p>
+            <h2 id="headline">Upload a resume to begin</h2>
+          </div>
+          <div class="score-dial" aria-label="ATS score">
+            <svg viewBox="0 0 120 120">
+              <circle class="dial-bg" cx="60" cy="60" r="48"></circle>
+              <circle id="dial-value" class="dial-value" cx="60" cy="60" r="48"></circle>
+            </svg>
+            <div>
+              <strong id="score-number">--</strong>
+              <span id="score-band">Waiting</span>
+            </div>
+          </div>
+        </div>
+
+        <nav class="tabs" aria-label="Analysis views">
+          <button class="tab active" type="button" data-tab="overview">Overview</button>
+          <button class="tab" type="button" data-tab="skills">Skills</button>
+          <button class="tab" type="button" data-tab="ats">ATS details</button>
+          <button class="tab" type="button" data-tab="deep">Deep analysis</button>
+          <button class="tab" type="button" data-tab="recruiter">Recruiter view</button>
+          <button class="tab" type="button" data-tab="content">Content audit</button>
+          <button class="tab" type="button" data-tab="suggestions">Suggestions</button>
+          <button class="tab" type="button" data-tab="text">PDF</button>
+        </nav>
+
+        <div id="error-box" class="error-box hidden"></div>
+
+        <section id="overview" class="tab-panel active">
+          <div class="metrics-grid">
+            <article class="metric">
+              <span>Keyword coverage</span>
+              <strong id="keyword-coverage">--</strong>
+            </article>
+            <article class="metric">
+              <span>Formatting</span>
+              <strong id="format-score">--</strong>
+            </article>
+            <article class="metric">
+              <span>Impact</span>
+              <strong id="impact-score">--</strong>
+            </article>
+            <article class="metric">
+              <span>Role fit</span>
+              <strong id="role-fit-score">--</strong>
+            </article>
+            <article class="metric">
+              <span>Readability</span>
+              <strong id="readability-score">--</strong>
+            </article>
+            <article class="metric">
+              <span>Achievements</span>
+              <strong id="achievement-score">--</strong>
+            </article>
+            <article class="metric">
+              <span>Word count</span>
+              <strong id="word-count">--</strong>
+            </article>
+          </div>
+          <div class="viz-grid">
+            <section class="panel viz-panel">
+              <div class="viz-heading"><div><span class="viz-kicker">PERFORMANCE</span><h3>Score profile</h3></div><span class="viz-caption">Scores out of 100</span></div>
+              <div id="overview-score-chart" class="horizontal-chart" aria-label="Resume score profile"><div class="chart-empty">Analyze a resume to see your score profile.</div></div>
+            </section>
+            <section class="panel viz-panel">
+              <div class="viz-heading"><div><span class="viz-kicker">JOB MATCH</span><h3>Keyword coverage</h3></div><span id="keyword-chart-total" class="viz-caption">Waiting for analysis</span></div>
+              <div id="keyword-chart" class="keyword-chart"><div class="chart-empty">Add a job description to compare keywords.</div></div>
+            </section>
+          </div>
+          <section class="panel viz-panel section-viz-panel">
+            <div class="viz-heading"><div><span class="viz-kicker">RESUME STRUCTURE</span><h3>Section health</h3></div><span id="section-chart-summary" class="viz-caption">Waiting for analysis</span></div>
+            <div id="section-health-chart" class="section-health-chart"><div class="chart-empty">Analyze a resume to see section coverage.</div></div>
+          </section>
+          <div class="split-layout">
+            <section class="panel">
+              <h3>Match summary</h3>
+              <p id="summary-text" class="summary-copy">The analyzer runs fully on this machine.</p>
+            </section>
+            <section class="panel">
+              <h3>Contact signals</h3>
+              <div id="contact-list" class="signal-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="skills" class="tab-panel">
+          <div class="split-layout">
+            <section class="panel">
+              <h3>Technical skills found</h3>
+              <div id="technical-skills" class="chips"></div>
+            </section>
+            <section class="panel">
+              <h3>Soft skills and action verbs</h3>
+              <div id="soft-skills" class="chips"></div>
+              <div id="action-verbs" class="chips secondary"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="ats" class="tab-panel">
+          <div class="split-layout">
+            <section class="panel">
+              <h3>Matched keywords</h3>
+              <div id="matched-keywords" class="chips"></div>
+            </section>
+            <section class="panel">
+              <h3>Missing keywords</h3>
+              <div id="missing-keywords" class="chips warning"></div>
+            </section>
+          </div>
+          <section class="panel section-panel">
+            <h3>Resume sections</h3>
+            <div id="section-checks" class="section-checks"></div>
+          </section>
+        </section>
+
+        <section id="deep" class="tab-panel">
+          <div class="analysis-grid">
+            <section class="panel">
+              <h3>Score breakdown</h3>
+              <div id="score-breakdown" class="score-list"></div>
+            </section>
+            <section class="panel">
+              <h3>Role fit</h3>
+              <div id="role-fit-details" class="detail-stack"></div>
+            </section>
+          </div>
+          <div class="analysis-grid">
+            <section class="panel">
+              <h3>Readability and achievements</h3>
+              <div id="writing-quality" class="detail-stack"></div>
+            </section>
+            <section class="panel">
+              <h3>ATS risk flags</h3>
+              <div id="ats-risks" class="risk-list"></div>
+            </section>
+          </div>
+          <div class="analysis-grid">
+            <section class="panel">
+              <h3>Section depth</h3>
+              <div id="section-depth" class="section-depth"></div>
+            </section>
+            <section class="panel">
+              <h3>Interview prep topics</h3>
+              <div id="interview-prep" class="prep-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="recruiter" class="tab-panel">
+          <div class="analysis-grid">
+            <section class="panel insight-panel">
+              <h3>First-pass recruiter read</h3>
+              <div id="recruiter-view" class="insight-stack"></div>
+            </section>
+            <section class="panel">
+              <h3>Section-by-section insight</h3>
+              <div id="section-insights" class="insight-list"></div>
+            </section>
+          </div>
+          <section class="panel">
+            <h3>Action plan</h3>
+            <div id="action-plan" class="action-plan"></div>
+          </section>
+        </section>
+
+        <section id="content" class="tab-panel">
+          <div class="analysis-grid">
+            <section class="panel">
+              <h3>Keyword density</h3>
+              <div id="keyword-density" class="density-list"></div>
+            </section>
+            <section class="panel">
+              <h3>Links and proof</h3>
+              <div id="proof-signals" class="signal-list"></div>
+            </section>
+          </div>
+          <div class="analysis-grid">
+            <section class="panel">
+              <h3>Bullet rewrite ideas</h3>
+              <div id="bullet-rewrites" class="rewrite-list"></div>
+            </section>
+            <section class="panel">
+              <h3>Project review</h3>
+              <div id="project-review" class="detail-stack"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="suggestions" class="tab-panel">
+          <div id="recommendations" class="recommendations"></div>
+        </section>
+
+        <section id="text" class="tab-panel">
+          <section class="panel">
+            <div class="text-panel-heading"><div><h3>PDF Preview</h3><p class="text-status">Preview the original PDF, or review the text used for analysis.</p></div></div>
+            <div id="pdf-preview-card" class="pdf-preview-card hidden">
+              <div class="pdf-preview-toolbar"><strong id="pdf-preview-name">Resume PDF</strong><a id="pdf-open-link" href="#" target="_blank" rel="noopener">Open PDF ↗</a></div>
+              <iframe id="pdf-preview" title="Uploaded resume PDF preview"></iframe>
+            </div>
+            <details class="extracted-text-details">
+              <summary>Extracted text</summary>
+            <p id="text-status" class="text-status">Run an analysis to preview the resume text used by the analyzer.</p>
+            <pre id="extracted-text"></pre>
+            </details>
+          </section>
+        </section>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

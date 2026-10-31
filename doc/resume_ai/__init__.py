@@ -1,0 +1,1 @@
+"""Local resume analyzer package."""
