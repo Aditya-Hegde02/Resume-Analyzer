@@ -30,8 +30,8 @@ The app has no required third-party Python packages. PDF extraction uses availab
 Clone the repository and move into its directory:
 
 ```bash
-git clone <repository-url>
-cd <repository-directory>
+git clone https://github.com/Aditya-Hegde02/Resume-Analyzer.git
+cd Resume-Analyzer
 ```
 
 Start the server:
